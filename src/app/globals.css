@@ -883,6 +883,25 @@ body {
   text-transform: uppercase;
 }
 
+/* Error message */
+.login-error {
+  font-size: 13px;
+  color: #d94040;
+  background: #fff0f0;
+  border: 1px solid #f5c0c0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+/* Disabled submit button */
+.login-submit-btn:disabled {
+  background: var(--text-light);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* OTP boxes */
 .otp-boxes {
   display: flex;

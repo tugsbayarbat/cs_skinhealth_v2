@@ -1,4 +1,5 @@
 import './globals.css';
+import { SessionProvider } from 'next-auth/react';
 
 export const metadata = {
   title: 'SkinHealth Assistant',
@@ -14,7 +15,11 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SessionProvider>
+          {children}
+        </SessionProvider>
+      </body>
     </html>
   );
 }

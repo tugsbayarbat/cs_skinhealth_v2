@@ -1,45 +1,88 @@
 'use client';
 
 import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-    const [step, setStep] = useState('email'); // 'email' | 'otp'
+    const router = useRouter();
+    const [step, setStep] = useState('email');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    // ── Step 1: send OTP ──────────────────────────────
-    function handleSendOtp(e) {
-        e.preventDefault();
-        if (!email.trim()) return;
-        // TODO: call your send-OTP API here
-        console.log('Send OTP to:', email);
-        setStep('otp');
+    // ── Step 1: request OTP ───────────────────────────
+    async function handleSendOtp(e) {
+        e?.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            const res = await fetch('/api/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to send code.');
+            setStep('otp');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    // ── Step 2: verify OTP ───────────────────────────
-    function handleVerifyOtp(e) {
-        e.preventDefault();
+    // ── Step 2: verify OTP via NextAuth signIn ────────
+    async function handleVerifyOtp(e) {
+        e?.preventDefault();
         const code = otp.join('');
-        if (code.length < 6) return;
-        // TODO: call your verify-OTP API here
-        console.log('Verify OTP:', code, 'for', email);
+        if (code.length < 6) { setError('Please enter all 6 digits.'); return; }
+        setError('');
+        setLoading(true);
+        try {
+            const result = await signIn('credentials', {
+                email,
+                otp: code,
+                redirect: false,
+            });
+
+            if (result?.error) {
+                setError('Incorrect or expired code. Please try again.');
+            } else {
+                // Redirect to main app on success
+                router.push('/');
+                router.refresh();
+            }
+        } catch {
+            setError('Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     }
 
-    // Move focus to next box as user types
+    // OTP box helpers
     function handleOtpChange(value, index) {
-        if (!/^\d*$/.test(value)) return; // digits only
+        if (!/^\d*$/.test(value)) return;
         const next = [...otp];
         next[index] = value.slice(-1);
         setOtp(next);
-        if (value && index < 5) {
-            document.getElementById(`otp-${index + 1}`)?.focus();
-        }
+        if (value && index < 5) document.getElementById(`otp-${index + 1}`)?.focus();
     }
 
     function handleOtpKeyDown(e, index) {
         if (e.key === 'Backspace' && !otp[index] && index > 0) {
             document.getElementById(`otp-${index - 1}`)?.focus();
         }
+    }
+
+    function handleOtpPaste(e) {
+        e.preventDefault();
+        const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        const next = [...otp];
+        digits.split('').forEach((d, i) => { next[i] = d; });
+        setOtp(next);
+        document.getElementById(`otp-${Math.min(digits.length, 5)}`)?.focus();
     }
 
     return (
@@ -50,8 +93,7 @@ export default function LoginPage() {
                     <div className="login-logo">
                         <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
                             <rect width="36" height="36" rx="12" fill="white" fillOpacity="0.15" />
-                            <path d="M18 8C12.477 8 8 12.477 8 18s4.477 10 10 10 10-4.477 10-10S23.523 8 18 8zm0 3a7 7 0 1 1 0 14A7 7 0 0 1 18 11zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 18 13z"
-                                fill="white" />
+                            <path d="M18 8C12.477 8 8 12.477 8 18s4.477 10 10 10 10-4.477 10-10S23.523 8 18 8zm0 3a7 7 0 1 1 0 14A7 7 0 0 1 18 11zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 18 13z" fill="white" />
                         </svg>
                         <span className="login-logo-text">SkinHealth</span>
                     </div>
@@ -100,8 +142,10 @@ export default function LoginPage() {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="login-submit-btn">
-                                    Send one-time code →
+                                {error && <p className="login-error">{error}</p>}
+
+                                <button type="submit" className="login-submit-btn" disabled={loading}>
+                                    {loading ? 'Sending…' : 'Send one-time code →'}
                                 </button>
                             </form>
                         </>
@@ -116,7 +160,7 @@ export default function LoginPage() {
                             </div>
 
                             <form className="login-form" onSubmit={handleVerifyOtp}>
-                                <div className="otp-boxes">
+                                <div className="otp-boxes" onPaste={handleOtpPaste}>
                                     {otp.map((digit, i) => (
                                         <input
                                             key={i}
@@ -133,24 +177,22 @@ export default function LoginPage() {
                                     ))}
                                 </div>
 
-                                <button type="submit" className="login-submit-btn">
-                                    Verify & sign in
+                                {error && <p className="login-error">{error}</p>}
+
+                                <button type="submit" className="login-submit-btn" disabled={loading}>
+                                    {loading ? 'Signing in…' : 'Verify & sign in'}
                                 </button>
                             </form>
 
                             <p className="login-register-link" style={{ marginTop: '20px' }}>
                                 Wrong address?{' '}
-                                <button
-                                    className="otp-back-btn"
-                                    onClick={() => { setStep('email'); setOtp(['', '', '', '', '', '']); }}
-                                >
+                                <button className="otp-back-btn" onClick={() => { setStep('email'); setOtp(['', '', '', '', '', '']); setError(''); }}>
                                     Change email
                                 </button>
                             </p>
-
                             <p className="login-register-link">
                                 Didn&apos;t receive it?{' '}
-                                <a href="#" onClick={(e) => { e.preventDefault(); console.log('Resend OTP'); }}>
+                                <a href="#" onClick={(e) => { e.preventDefault(); handleSendOtp(); }}>
                                     Resend code
                                 </a>
                             </p>
