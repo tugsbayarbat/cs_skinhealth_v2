@@ -66,6 +66,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ],
 
     callbacks: {
+        // Route protection — called by middleware on every request
+        authorized({ auth, request: { nextUrl } }) {
+            const isLoggedIn = !!auth?.user;
+            const isLoginPage = nextUrl.pathname === '/login';
+
+            // Authenticated user hitting /login → redirect to app
+            if (isLoggedIn && isLoginPage) {
+                return Response.redirect(new URL('/', nextUrl));
+            }
+            // Unauthenticated user hitting any other page → redirect to /login
+            if (!isLoggedIn && !isLoginPage) {
+                return Response.redirect(new URL('/login', nextUrl));
+            }
+            return true;
+        },
+
         // Persist extra fields (id, role) into the JWT
         jwt({ token, user }) {
             if (user) {

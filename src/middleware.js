@@ -1,29 +1,8 @@
-import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
+// Canonical NextAuth v5 middleware — re-export `auth` directly.
+// Redirect logic lives in the `authorized` callback in src/auth.js.
+export { auth as middleware } from '@/auth';
 
-export default auth((req) => {
-    const isLoggedIn = !!req.auth;
-    const { pathname } = req.nextUrl;
-
-    const isLoginPage = pathname === '/login';
-    const isPublicAsset = pathname.startsWith('/_next') || pathname.startsWith('/favicon');
-
-    if (isPublicAsset) return NextResponse.next();
-
-    // Redirect unauthenticated users to login
-    if (!isLoggedIn && !isLoginPage) {
-        return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    // Redirect already-authenticated users away from login
-    if (isLoggedIn && isLoginPage) {
-        return NextResponse.redirect(new URL('/', req.url));
-    }
-
-    return NextResponse.next();
-});
-
-// Apply middleware to all routes except API and static assets
+// Apply to all routes except API, static assets, and images
 export const config = {
     matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
