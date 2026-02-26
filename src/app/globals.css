@@ -196,6 +196,35 @@ body {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logout-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-mid);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.logout-btn:hover {
+  background: #fff0f0;
+  border-color: #f5c0c0;
+  color: #d94040;
+}
+
+.logout-btn svg {
+  width: 17px;
+  height: 17px;
 }
 
 .user-pill {
