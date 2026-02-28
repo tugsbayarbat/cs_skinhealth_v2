@@ -109,6 +109,11 @@ export default function ChatPage() {
                 <ProfileModal onComplete={() => update()} />
             )}
 
+            {/* Mobile backdrop — closes sidebar when tapped */}
+            {sidebarOpen && (
+                <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+            )}
+
             {/* SIDEBAR */}
             <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
                 <button

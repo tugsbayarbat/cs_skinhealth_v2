@@ -199,7 +199,7 @@ export default function LoginPage() {
                         </>
                     )}
 
-                    <div className="login-divider"><span>GROUP 7 · CS PROJECT 2</span></div>
+                    <div className="login-divider"><span>COMPUTER SCIENCE PROJECT · Curtin University 2026</span></div>
                 </div>
             </div>
         </div>

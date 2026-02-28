@@ -105,7 +105,6 @@ export default function HomePage() {
 
         {/* PROJECT PLAN */}
         <section className="intro-section" id="plan">
-          <p className="intro-label">PROJECT PLAN</p>
           <div className="intro-plan-list">
             {PLAN_ITEMS.map((item) => (
               <div key={item.num} className="intro-plan-item">
