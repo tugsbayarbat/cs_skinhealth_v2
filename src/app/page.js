@@ -157,7 +157,7 @@ export default function HomePage() {
 
         {/* FOOTER */}
         <footer className="intro-footer">
-          <span>COMPUTER SCIENCE PROJECT · Curtin University 2025</span>
+          <span>COMPUTER SCIENCE PROJECT · Curtin University 2026</span>
           <Link href="/chat" className="intro-try-btn">Try it out →</Link>
         </footer>
 
