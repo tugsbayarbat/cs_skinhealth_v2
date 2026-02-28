@@ -50,8 +50,8 @@ export default function LoginPage() {
             if (result?.error) {
                 setError('Incorrect or expired code. Please try again.');
             } else {
-                // Redirect to main app on success
-                router.push('/');
+                // Redirect to chat on success
+                router.push('/chat');
                 router.refresh();
             }
         } catch {

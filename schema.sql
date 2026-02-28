@@ -83,3 +83,30 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ── 7. CONVERSATIONS ─────────────────────────────────────────
+-- One row per chat session. Run in Neon SQL Editor:
+--   CREATE TABLE IF NOT EXISTS conversations ( … )
+CREATE TABLE IF NOT EXISTS conversations (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title      TEXT NOT NULL DEFAULT 'New conversation',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id);
+
+-- ── 8. MESSAGES ──────────────────────────────────────────────
+-- One row per message (user or assistant).
+-- assistant rows: reply_to_id → the user message they answered.
+CREATE TABLE IF NOT EXISTS messages (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL,           -- 'user' | 'assistant'
+  content         TEXT NOT NULL,
+  reply_to_id     UUID REFERENCES messages(id),  -- assistant only
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+

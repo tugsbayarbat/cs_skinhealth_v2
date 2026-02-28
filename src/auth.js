@@ -73,13 +73,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
             const isLoginPage = nextUrl.pathname === '/login';
+            const isPublic = nextUrl.pathname === '/' || isLoginPage;
 
-            // Authenticated user hitting /login → redirect to app
+            // Authenticated user hitting /login → redirect to /chat
             if (isLoggedIn && isLoginPage) {
-                return Response.redirect(new URL('/', nextUrl));
+                return Response.redirect(new URL('/chat', nextUrl));
             }
-            // Unauthenticated user hitting any other page → redirect to /login
-            if (!isLoggedIn && !isLoginPage) {
+            // Unauthenticated user hitting a protected page → redirect to /login
+            if (!isLoggedIn && !isPublic) {
                 return Response.redirect(new URL('/login', nextUrl));
             }
             return true;

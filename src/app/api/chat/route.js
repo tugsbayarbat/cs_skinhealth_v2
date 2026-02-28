@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import sql from '@/lib/db';
 
 const RESPONSES = [
     {
@@ -49,9 +51,56 @@ const RESPONSES = [
 ];
 
 export async function POST(request) {
-    const { message } = await request.json();
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
 
+    const { message, conversation_id: existingConvId } = await request.json();
+    if (!message) {
+        return NextResponse.json({ error: 'message is required' }, { status: 400 });
+    }
+
+    // ── 1. Resolve or create conversation ──────────────────────
+    let conversationId = existingConvId ?? null;
+
+    if (userId) {
+        if (!conversationId) {
+            // New conversation — use first 60 chars of message as title
+            const title = message.trim().slice(0, 60) || 'New conversation';
+            const [conv] = await sql`
+                INSERT INTO conversations (user_id, title)
+                VALUES (${userId}, ${title})
+                RETURNING id
+            `;
+            conversationId = conv.id;
+        }
+
+        // ── 2. Save user message ────────────────────────────────
+        const [userMsg] = await sql`
+            INSERT INTO messages (conversation_id, role, content)
+            VALUES (${conversationId}, 'user', ${message.trim()})
+            RETURNING id
+        `;
+
+        // ── 3. Pick a response ─────────────────────────────────
+        const response = RESPONSES[Math.floor(Math.random() * RESPONSES.length)];
+        const assistantContent = [response.intro, ...(response.points ?? [])].join('\n');
+
+        // ── 4. Save assistant message with reply_to_id ─────────
+        const [assistantMsg] = await sql`
+            INSERT INTO messages (conversation_id, role, content, reply_to_id)
+            VALUES (${conversationId}, 'assistant', ${assistantContent}, ${userMsg.id})
+            RETURNING id
+        `;
+
+        return NextResponse.json({
+            response,
+            conversation_id: conversationId,
+            user_msg_id: userMsg.id,
+            assistant_msg_id: assistantMsg.id,
+        });
+    }
+
+    // Unauthenticated fallback — still return a response, just don't persist
     const response = RESPONSES[Math.floor(Math.random() * RESPONSES.length)];
-
     return NextResponse.json({ response });
 }
