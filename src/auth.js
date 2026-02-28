@@ -60,6 +60,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: user.name ?? null,
                     image: user.image ?? null,
                     role: user.role,
+                    gender: user.gender ?? null,
+                    birth_year: user.birth_year ?? null,
+                    profileComplete: !!(user.name && user.gender && user.birth_year),
                 };
             },
         }),
@@ -82,19 +85,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
         },
 
-        // Persist extra fields (id, role) into the JWT
-        jwt({ token, user }) {
+        // Persist extra fields (id, role, gender, birth_year, profileComplete) into the JWT
+        async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.gender = user.gender;
+                token.birth_year = user.birth_year;
+                token.profileComplete = user.profileComplete;
+            }
+            // When the client calls update() (e.g. after ProfileModal saves),
+            // re-fetch the user row so profileComplete reflects the latest DB state.
+            if (trigger === 'update' && token.id) {
+                const rows = await sql`
+                    SELECT name, gender, birth_year, role FROM users WHERE id = ${token.id} LIMIT 1
+                `;
+                if (rows.length > 0) {
+                    const u = rows[0];
+                    token.name = u.name;
+                    token.role = u.role;
+                    token.gender = u.gender;
+                    token.birth_year = u.birth_year;
+                    token.profileComplete = !!(u.name && u.gender && u.birth_year);
+                }
             }
             return token;
         },
 
-        // Expose id and role on the client-side session object
+
+        // Expose id, role, gender, birth_year, profileComplete on the client-side session object
         session({ session, token }) {
             session.user.id = token.id;
             session.user.role = token.role;
+            session.user.gender = token.gender;
+            session.user.birth_year = token.birth_year;
+            session.user.profileComplete = token.profileComplete;
             return session;
         },
     },

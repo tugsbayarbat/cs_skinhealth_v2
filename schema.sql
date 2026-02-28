@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified TIMESTAMPTZ,
   image         TEXT,
   role          TEXT NOT NULL DEFAULT 'patient',   -- 'patient' | 'admin'
+  gender        TEXT,                               -- 'Male' | 'Female' | 'Other' | 'Prefer not to say'
+  birth_year    INTEGER,                            -- collected on first login
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

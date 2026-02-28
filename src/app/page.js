@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import BotResponse from './components/BotResponse';
 import KeyNotes from './components/KeyNotes';
 import QuickSummary from './components/QuickSummary';
 import ChatInput from './components/ChatInput';
 import UploadedImages from './components/UploadedImages';
+import ProfileModal from './components/ProfileModal';
 
 const INITIAL_RESPONSE = {
   intro: "Thanks for sharing. I can help you assess the possible causes and provide care advice.",
@@ -19,11 +20,15 @@ const INITIAL_RESPONSE = {
 };
 
 export default function Home() {
+  const { data: session, update } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [latestResponse, setLatestResponse] = useState(INITIAL_RESPONSE);
   const [uploadedImages, setUploadedImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const chatBodyRef = useRef(null);
+
+  // Show modal when profile is incomplete
+  const showProfileModal = session && session.user?.profileComplete === false;
 
   useEffect(() => {
     if (chatBodyRef.current) {
@@ -55,6 +60,11 @@ export default function Home() {
 
   return (
     <>
+      {/* Profile completion modal — shown on first login */}
+      {showProfileModal && (
+        <ProfileModal onComplete={() => update()} />
+      )}
+
       {/* SIDEBAR */}
       <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
         <button
@@ -111,7 +121,9 @@ export default function Home() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </div>
-              <span className="user-name">Tugsbayar Bat-Erdene</span>
+              <span className="user-name">
+                {session?.user?.name || session?.user?.email || 'User'}
+              </span>
             </div>
             <button
               className="logout-btn"
