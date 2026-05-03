@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   role          TEXT NOT NULL DEFAULT 'patient',   -- 'patient' | 'admin'
   gender        TEXT,                               -- 'Male' | 'Female' | 'Other' | 'Prefer not to say'
   birth_year    INTEGER,                            -- collected on first login
+  is_approved   BOOLEAN DEFAULT FALSE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

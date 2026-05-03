@@ -1654,3 +1654,38 @@ body:has(.intro-page) {
   transform: none;
   box-shadow: none;
 }
+
+profile-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--purple);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 6px 20px rgba(107, 53, 217, 0.3);
+}
+
+.profile-submit-btn:hover {
+  background: var(--purple-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(107, 53, 217, 0.4);
+}
+
+.profile-submit-btn:active {
+  transform: translateY(0);
+}
+
+.profile-submit-btn:disabled {
+  background: var(--text-light);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+

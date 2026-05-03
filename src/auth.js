@@ -9,6 +9,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     providers: [
         Credentials({
+            id: 'admin-login',
+            credentials: {
+                email: { label: 'Email', type: 'email' },
+                password: { label: 'Password', type: 'password' },
+            },
+            async authorize({ email, password }) {
+                if (!email || !password) return null;
+
+                const userRows = await sql`
+                    SELECT * FROM users
+                    WHERE email = ${email.toLowerCase()}
+                    LIMIT 1
+                `;
+                const user = userRows[0];
+
+                if (!user || user.role !== 'admin' || !user.password_hash) return null;
+
+                const bcrypt = require('bcryptjs');
+                const isValid = await bcrypt.compare(password, user.password_hash);
+                
+                if (!isValid) return null;
+
+                return {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name ?? null,
+                    image: user.image ?? null,
+                    role: user.role,
+                    gender: user.gender ?? null,
+                    birth_year: user.birth_year ?? null,
+                    profileComplete: !!(user.name && user.gender && user.birth_year),
+                };
+            }
+        }),
+        Credentials({
             // These labels appear in the built-in NextAuth forms (we use our own UI)
             credentials: {
                 email: { label: 'Email', type: 'email' },
@@ -43,12 +78,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           LIMIT 1
         `;
 
-                if (userRows.length === 0) {
-                    userRows = await sql`
-            INSERT INTO users (email, email_verified)
-            VALUES (${email.toLowerCase()}, NOW())
-            RETURNING *
-          `;
+                if (userRows.length === 0 || !userRows[0].is_approved) {
+                    return null;
                 }
 
                 const user = userRows[0];
@@ -73,14 +104,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
             const isLoginPage = nextUrl.pathname === '/login';
-            const isPublic = nextUrl.pathname === '/' || isLoginPage;
+            const isAdminLoginPage = nextUrl.pathname === '/admin/login';
+            const isPublic = nextUrl.pathname === '/' || isLoginPage || isAdminLoginPage || nextUrl.pathname === '/registered';
 
-            // Authenticated user hitting /login → redirect to /chat
-            if (isLoggedIn && isLoginPage) {
+            // Rules
+            if (isLoggedIn && (isLoginPage || isAdminLoginPage)) {
+                if (auth.user.role === 'admin') {
+                    return Response.redirect(new URL('/admin', nextUrl));
+                }
                 return Response.redirect(new URL('/chat', nextUrl));
             }
-            // Unauthenticated user hitting a protected page → redirect to /login
             if (!isLoggedIn && !isPublic) {
+                if (nextUrl.pathname.startsWith('/admin')) {
+                    return Response.redirect(new URL('/admin/login', nextUrl));
+                }
                 return Response.redirect(new URL('/login', nextUrl));
             }
             return true;

@@ -24,7 +24,14 @@ export default function LoginPage() {
                 body: JSON.stringify({ email }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to send code.');
+            console.log('Login OTP Response:', res.status, data);
+            if (!res.ok) {
+                if (data.reason === 'waitlist') {
+                    window.location.href = '/registered';
+                    return;
+                }
+                throw new Error(data.error || 'Failed to send code.');
+            }
             setStep('otp');
         } catch (err) {
             setError(err.message);

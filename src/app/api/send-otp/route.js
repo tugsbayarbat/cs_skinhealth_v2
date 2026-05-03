@@ -23,6 +23,27 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Valid email is required.' }, { status: 400 });
     }
 
+    // Check if user exists
+    let userRows = await sql`
+        SELECT id, is_approved FROM users
+        WHERE email = ${email.toLowerCase()}
+        LIMIT 1
+    `;
+
+    if (userRows.length === 0) {
+        // Register the user on the waitlist
+        await sql`
+            INSERT INTO users (email, email_verified, is_approved)
+            VALUES (${email.toLowerCase()}, NOW(), FALSE)
+        `;
+        return NextResponse.json({ error: 'Registered successfully.', reason: 'waitlist' }, { status: 403 });
+    }
+
+    const user = userRows[0];
+    if (!user.is_approved) {
+        return NextResponse.json({ error: 'You are on the waitlist.', reason: 'waitlist' }, { status: 403 });
+    }
+
     const otp = generateOtp();
 
     // Persist OTP to Neon DB (expires in 10 minutes)

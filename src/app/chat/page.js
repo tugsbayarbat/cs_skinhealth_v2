@@ -24,7 +24,11 @@ export default function ChatPage() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [latestResponse, setLatestResponse] = useState(INITIAL_RESPONSE);
     const [uploadedImages, setUploadedImages] = useState([]);
+    const [symptoms, setSymptoms] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [historyMessages, setHistoryMessages] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(false);
     const chatBodyRef = useRef(null);
 
     // Conversation tracking
@@ -46,11 +50,53 @@ export default function ChatPage() {
         }
     }, []);
 
+    const loadSymptoms = useCallback(async (id) => {
+        if (!id) return;
+        try {
+            const symRes = await fetch(`/api/chat/symptoms?conversationId=${id}`);
+            if (symRes.ok) {
+                const symData = await symRes.json();
+                setSymptoms(symData);
+            }
+        } catch {
+            // non-fatal
+        }
+    }, []);
+
     useEffect(() => {
         if (session?.user?.id) {
             loadConversations();
         }
     }, [session?.user?.id, loadConversations]);
+
+    useEffect(() => {
+        if (conversationId) {
+            loadSymptoms(conversationId);
+
+            // Fetch history to get the latest response for the active chat
+            fetch(`/api/chat/history?conversationId=${conversationId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.messages && data.messages.length > 0) {
+                        const asstMsgs = data.messages.filter(m => m.role === 'assistant');
+                        if (asstMsgs.length > 0) {
+                            setLatestResponse({
+                                intro: asstMsgs[asstMsgs.length - 1].content,
+                                points: []
+                            });
+                        } else {
+                            setLatestResponse(INITIAL_RESPONSE);
+                        }
+                    } else {
+                        setLatestResponse(INITIAL_RESPONSE);
+                    }
+                })
+                .catch(() => setLatestResponse(INITIAL_RESPONSE));
+        } else {
+            setSymptoms(null);
+            setLatestResponse(INITIAL_RESPONSE);
+        }
+    }, [conversationId, loadSymptoms]);
 
     useEffect(() => {
         if (chatBodyRef.current) {
@@ -63,32 +109,85 @@ export default function ChatPage() {
         setConversationId(null);
         setLatestResponse(INITIAL_RESPONSE);
         setUploadedImages([]);
+        setSymptoms(null);
     }
 
-    async function handleSend(text, images) {
+    async function handleSend(text, images, rawFiles = []) {
         if (images && images.length > 0) {
             setUploadedImages((prev) => [...prev, ...images]);
         }
         setLoading(true);
 
         try {
+            let currentConvId = conversationId;
+
+            // 1. Upload images if any
+            if (rawFiles && rawFiles.length > 0) {
+                for (const file of rawFiles) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    if (currentConvId) {
+                        formData.append('conversation_id', currentConvId);
+                    }
+                    const imgRes = await fetch('/api/chat/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!imgRes.ok) throw new Error('Image upload failed');
+                    const imgData = await imgRes.json();
+
+                    if (!currentConvId && imgData.conversation_id) {
+                        currentConvId = imgData.conversation_id;
+                        setConversationId(currentConvId);
+                        await loadConversations();
+                    }
+                }
+            }
+
+            // 2. Send the message (to advance conversation)
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, conversation_id: conversationId }),
+                body: JSON.stringify({ message: text, conversation_id: currentConvId }),
             });
             const data = await res.json();
-            setLatestResponse(data.response);
 
-            // If a new conversation was created, store its id and refresh sidebar
-            if (data.conversation_id && !conversationId) {
+            if (data.response) {
+                setLatestResponse(data.response);
+            }
+
+            // If a new conversation was created here, store its id and refresh sidebar
+            const finalConvId = data.conversation_id || currentConvId;
+            if (data.conversation_id && !currentConvId) {
                 setConversationId(data.conversation_id);
                 await loadConversations();
+            }
+
+            // Refresh symptoms
+            if (finalConvId) {
+                await loadSymptoms(finalConvId);
             }
         } catch {
             setLatestResponse({ intro: 'Sorry, something went wrong. Please try again.', points: [] });
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleShowHistory() {
+        if (!conversationId) return;
+        setLoadingHistory(true);
+        setShowHistoryModal(true);
+        try {
+            const res = await fetch(`/api/chat/history?conversationId=${conversationId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setHistoryMessages(data.messages || []);
+            }
+        } catch {
+            // Non-fatal
+        } finally {
+            setLoadingHistory(false);
         }
     }
 
@@ -107,6 +206,71 @@ export default function ChatPage() {
             {/* Profile completion modal — shown on first login */}
             {showProfileModal && (
                 <ProfileModal onComplete={() => update()} />
+            )}
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div
+                    onClick={() => setShowHistoryModal(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#fff',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            maxWidth: '640px',
+                            width: '94%',
+                            maxHeight: '85vh',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 12px 48px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee', paddingBottom: '16px', marginBottom: '16px' }}>
+                            <h2 style={{ margin: 0, fontSize: '18px', fontFamily: 'Syne, sans-serif' }}>Chat History</h2>
+                            <button onClick={() => setShowHistoryModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '28px', color: '#999', lineHeight: 1 }}>&times;</button>
+                        </div>
+                        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '12px' }}>
+                            {loadingHistory ? (
+                                <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Loading history...</p>
+                            ) : historyMessages.length === 0 ? (
+                                <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>No messages found.</p>
+                            ) : (
+                                historyMessages.map((msg, idx) => (
+                                    <div key={idx} style={{
+                                        marginBottom: '20px',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        backgroundColor: msg.role === 'user' ? '#f0f2f8' : '#fff',
+                                        border: msg.role === 'assistant' ? '1px solid #e2e4f0' : 'none',
+                                        boxShadow: msg.role === 'assistant' ? '0 4px 12px rgba(0,0,0,0.03)' : 'none'
+                                    }}>
+                                        <div style={{ fontWeight: '700', marginBottom: '8px', fontSize: '11px', color: msg.role === 'assistant' ? '#6b35d9' : '#666', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            {msg.role}
+                                        </div>
+                                        <div style={{ fontSize: '15px', lineHeight: '1.6', whiteSpace: 'pre-wrap', color: '#1a1a2e' }}>
+                                            {msg.content}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Mobile backdrop — closes sidebar when tapped */}
@@ -169,8 +333,11 @@ export default function ChatPage() {
                                     key={conv.id}
                                     className={`conv-item${conv.id === conversationId ? ' conv-item-active' : ''}`}
                                     onClick={() => {
-                                        setConversationId(conv.id);
-                                        setLatestResponse(INITIAL_RESPONSE);
+                                        if (conversationId !== conv.id) {
+                                            setConversationId(conv.id);
+                                            setLatestResponse({ intro: 'Loading conversation...', points: [] });
+                                            setSymptoms(null);
+                                        }
                                     }}
                                     title={conv.title}
                                 >
@@ -212,7 +379,31 @@ export default function ChatPage() {
 
             {/* MAIN */}
             <main className="main">
-                <header className="chat-header">SkinHealth Assistant</header>
+                <header className="chat-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>SkinHealth Assistant</span>
+                    {conversationId && (
+                        <button
+                            onClick={handleShowHistory}
+                            style={{
+                                background: 'transparent',
+                                border: '1px solid #e0e0e0',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                color: '#555',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" style={{ marginRight: '6px' }}>
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            View History
+                        </button>
+                    )}
+                </header>
 
                 <div className="chat-body" ref={chatBodyRef}>
 
@@ -239,8 +430,8 @@ export default function ChatPage() {
 
                     {/* Info cards */}
                     <div className="cards-row">
-                        <KeyNotes title="Symptom notes" meta="Heart Surgeon, London, England" />
-                        <QuickSummary title="Quick summary" meta="Heart Surgeon, London, England" />
+                        <KeyNotes title="Symptom notes" symptoms={symptoms} />
+                        <QuickSummary title="Quick summary" />
 
                         {/* Uploaded images component */}
                         <UploadedImages

@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 export default function ChatInput({ onSend, disabled }) {
     const [text, setText] = useState('');
     const [previews, setPreviews] = useState([]); // array of data URLs
+    const [rawFiles, setRawFiles] = useState([]); // array of original File objects
     const fileInputRef = useRef(null);
 
     function handleFileChange(e) {
@@ -22,6 +23,7 @@ export default function ChatInput({ onSend, disabled }) {
 
         Promise.all(readers).then((results) => {
             setPreviews((prev) => [...prev, ...results]);
+            setRawFiles((prev) => [...prev, ...files]);
         });
 
         // Reset input so same file can be re-added if needed
@@ -30,14 +32,18 @@ export default function ChatInput({ onSend, disabled }) {
 
     function removePreview(index) {
         setPreviews((prev) => prev.filter((_, i) => i !== index));
+        setRawFiles((prev) => prev.filter((_, i) => i !== index));
     }
 
     function handleSend() {
         if (!text.trim() && previews.length === 0) return;
         if (disabled) return;
-        onSend(text.trim(), previews);
+
+        onSend(text.trim(), previews, rawFiles);
         setText('');
         setPreviews([]);
+        setRawFiles([]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     }
 
     function handleKeyDown(e) {
