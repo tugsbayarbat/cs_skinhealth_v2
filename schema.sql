@@ -111,3 +111,15 @@ CREATE TABLE IF NOT EXISTS messages (
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 
+-- ── 9. OTP ATTEMPTS ──────────────────────────────────────────
+-- Tracks failed OTP verification attempts per email.
+-- Used to enforce brute-force lockout: max 5 failures in 15 minutes.
+CREATE TABLE IF NOT EXISTS otp_attempts (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email       TEXT NOT NULL,
+  attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Index for fast per-email lookups within a time window
+CREATE INDEX IF NOT EXISTS idx_otp_attempts_email_time
+  ON otp_attempts(email, attempted_at);

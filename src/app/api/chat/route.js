@@ -17,7 +17,10 @@ export async function POST(request) {
     if (userId) {
         if (!conversationId) {
             // 1. Ask FastAPI to start a session and give us its session_id
-            const startRes = await fetch('http://localhost:8000/session/start', { method: 'POST' });
+            const startRes = await fetch('http://localhost:8000/session/start', {
+                method: 'POST',
+                headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
+            });
             if (!startRes.ok) throw new Error('Failed to start FastAPI session');
             const startData = await startRes.json();
             const fastapiSessionId = startData.session_id;
@@ -42,7 +45,10 @@ export async function POST(request) {
         // ── 3. Proxy to FastAPI ─────────────────────────────────
         const fastapiRes = await fetch('http://localhost:8000/chat/message', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET,
+            },
             body: JSON.stringify({
                 session_id: conversationId.toString(),
                 message: message.trim()
@@ -74,21 +80,9 @@ export async function POST(request) {
         });
     }
 
-    // Unauthenticated fallback — proxy to FastAPI but don't persist
-    const proxyId = 'temp-' + Math.random().toString(36).substring(7);
-    const fastapiRes = await fetch('http://localhost:8000/chat/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            session_id: proxyId,
-            message: message.trim()
-        })
-    });
-
-    if (!fastapiRes.ok) {
-        return NextResponse.json({ error: 'FastAPI validation error' }, { status: 500 });
-    }
-
-    const backendResult = await fastapiRes.json();
-    return NextResponse.json({ response: { intro: backendResult.response, points: [] } });
+    // Unauthenticated — reject immediately. Do NOT proxy to FastAPI.
+    return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+    );
 }

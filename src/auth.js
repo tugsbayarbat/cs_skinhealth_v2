@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import sql from '@/lib/db';
+import { checkLockout, recordFailedAttempt, clearAttempts } from '@/lib/otpAttempts';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     // JWT sessions — compatible with Credentials provider.
@@ -53,10 +54,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             async authorize({ email, otp }) {
                 if (!email || !otp) return null;
 
+                const key = email.toLowerCase();
+
+                // ── Brute-force lockout check ───────────────────
+                const { locked } = await checkLockout(key);
+                if (locked) return null;
+
                 // 1. Find most-recent valid OTP for this email
                 const records = await sql`
           SELECT * FROM otp_codes
-          WHERE email      = ${email.toLowerCase()}
+          WHERE email      = ${key}
             AND used       = FALSE
             AND expires_at > NOW()
           ORDER BY created_at DESC
@@ -64,17 +71,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         `;
 
                 const record = records[0];
-                if (!record || record.code !== String(otp)) return null;
+                if (!record) return null;
 
-                // 2. Mark OTP as used (one-time)
+                // 2. Validate code — record failure on mismatch
+                if (record.code !== String(otp)) {
+                    await recordFailedAttempt(key);
+                    return null;
+                }
+
+                // 3. Mark OTP as used (one-time) and clear attempt history
                 await sql`
           UPDATE otp_codes SET used = TRUE WHERE id = ${record.id}
         `;
+                await clearAttempts(key);
 
-                // 3. Find or create the user in Neon
+                // 4. Find the user — must exist and be approved
                 let userRows = await sql`
           SELECT * FROM users
-          WHERE email = ${email.toLowerCase()}
+          WHERE email = ${key}
           LIMIT 1
         `;
 

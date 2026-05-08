@@ -17,7 +17,10 @@ export async function POST(request) {
 
         // If no conversationId exists, create a new conversation
         if (!conversationId || conversationId === 'null') {
-            const startRes = await fetch('http://localhost:8000/session/start', { method: 'POST' });
+            const startRes = await fetch('http://localhost:8000/session/start', {
+                method: 'POST',
+                headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
+            });
             if (!startRes.ok) throw new Error('Failed to start FastAPI session');
             const startData = await startRes.json();
             const fastapiSessionId = startData.session_id;
@@ -42,6 +45,7 @@ export async function POST(request) {
 
         const fastapiRes = await fetch('http://localhost:8000/chat/upload-image', {
             method: 'POST',
+            headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
             body: proxyFormData,
         });
 

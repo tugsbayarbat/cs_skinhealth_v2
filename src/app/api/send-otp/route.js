@@ -46,6 +46,22 @@ export async function POST(request) {
 
     const otp = generateOtp();
 
+    // ── OTP send-rate limit: max 1 per 60 seconds per email ────
+    const recentOtp = await sql`
+        SELECT id FROM otp_codes
+        WHERE email      = ${email.toLowerCase()}
+          AND used       = FALSE
+          AND expires_at > NOW()
+          AND created_at > NOW() - INTERVAL '60 seconds'
+        LIMIT 1
+    `;
+    if (recentOtp.length > 0) {
+        return NextResponse.json(
+            { error: 'A code was already sent. Please wait 60 seconds before requesting a new one.' },
+            { status: 429 }
+        );
+    }
+
     // Persist OTP to Neon DB (expires in 10 minutes)
     await sql`
         INSERT INTO otp_codes (email, code, expires_at)

@@ -4,6 +4,7 @@ export async function POST() {
     try {
         const fastapiRes = await fetch('http://localhost:8000/session/start', {
             method: 'POST',
+            headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
         });
 
         if (!fastapiRes.ok) {
