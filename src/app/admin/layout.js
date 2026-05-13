@@ -100,7 +100,6 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
-  { text: 'Orders', icon: <ShoppingCartIcon />, path: '#' },
   { text: 'Patients', icon: <PeopleIcon />, path: '/admin/patients' },
   { text: 'AI Models', icon: <MemoryIcon />, path: '/admin/models' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/admin/settings' },
@@ -109,7 +108,7 @@ const menuItems = [
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#6B35D9', 
+      main: '#6B35D9',
     },
     background: {
       default: '#F7F8FC'
@@ -198,10 +197,10 @@ export default function AdminLayout({ children }) {
                       >
                         {item.icon}
                       </ListItemIcon>
-                      <ListItemText 
-                        primary={item.text} 
-                        sx={{ opacity: open ? 1 : 0, color: isActive ? theme.palette.primary.main : '#1A1A2E' }} 
-                        disableTypography 
+                      <ListItemText
+                        primary={item.text}
+                        sx={{ opacity: open ? 1 : 0, color: isActive ? theme.palette.primary.main : '#1A1A2E' }}
+                        disableTypography
                       />
                     </ListItemButton>
                   </Link>

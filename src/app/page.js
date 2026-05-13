@@ -1,15 +1,45 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Skin Care Assistant',
+  description: 'A multimodal AI system for preliminary dermatological assessment, combining computer vision and conversational reasoning',
+  viewport: 'width=device-width, initial-scale=1',
+};
+
 const PLAN_ITEMS = [
   {
     num: '01',
     title: 'Project Description',
-    body: 'The Skin Care Assistant integrates image analysis and conversational reasoning into a unified multimodal system. This semester, DenseNet acts as a vision encoder whose feature embeddings connect directly to a fine-tuned LLaMA-based language model — enabling reasoning over visual patterns such as texture and lesion characteristics, rather than relying on a single predicted label.',
+    body: (
+      <>
+        <p>The Skin Care Assistant combines image analysis and conversational reasoning into a single multimodal pipeline. Instead of predicting a single class label, we use a fine-tuned DenseNet-121 to extract visual features that are projected into the embedding space of the language model via a light MLP connector. This enables the system to make joint reasoning about morphological cues - texture, scaling, erythema - along with patient reported symptoms.</p>
+        <p style={{ marginTop: '1rem' }}>The assistant is now focusing on three dermatological categories: acne, eczema and psoriasis. All responses are formulated as a provisional decision support with explicit disclaimers and advice to consult a dermatologist.</p>
+      </>
+    ),
   },
   {
     num: '02',
-    title: 'Main Goal',
-    body: 'Design the AI core of the Skin Care Assistant by developing and evaluating a hybrid multimodal model that integrates visual features and textual reasoning in a more unified way, and evaluate whether this improves diagnostic and conversational quality compared to the previous modular pipeline.',
+    title: 'Key Features',
+    body: (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div>
+          <strong>Multimodal joint diagnosis</strong><br />
+          DenseNet-121 visual features into the LLaMA embedding space, thus enabling a single reasoning pass over the image and the collected symptoms, as compared to treating the two modalities as independent signals.
+        </div>
+        <div>
+          <strong>Task-specific LoRA adapters</strong><br />
+          A common base model with a LoRA adapter on top for each task: symptom collection, joint diagnosis, grounded Q&A. This decouples behaviours that interfere with each other in single-adapter fine-tuning at little overhead. The orchestrator dynamically switches the adapters at runtime.
+        </div>
+        <div>
+          <strong>Structured symptom collection</strong><br />
+          A fine-tuned anamnesis protocol enforces a one-question-at-a-time policy and emits an explicit termination signal when collection is complete, giving the orchestrator a reliable handoff to the visual pipeline.
+        </div>
+        <div>
+          <strong>Retrieval-augmented follow-up</strong><br />
+          After diagnosis delivery, follow-up questions are answered through a RAG pipeline that combines dense retrieval (ChromaDB), lexical retrieval (BM25), reciprocal rank fusion, and reranking — grounding responses in a curated knowledge base rather than parametric memory.
+        </div>
+      </div>
+    ),
   },
 ];
 
@@ -94,9 +124,7 @@ export default function HomePage() {
           <p className="intro-label">COMPUTER SCIENCE PROJECT</p>
           <h1 className="intro-title">Skin Care Assistant</h1>
           <p className="intro-desc">
-            A hybrid multimodal AI system combining DenseNet visual feature extraction
-            with a LLaMA-based language model to deliver intelligent, image-aware
-            dermatological guidance through a conversational interface.
+            Lightweight multimodal AI system that integrates DenseNet for visual feature extraction and a fine-tuned LLaMA 3.2 3B language model to provide image-aware dermatological guidance in a structured conversational manner.
           </p>
           <Link href="/chat" className="intro-hero-btn">Try it out →</Link>
         </header>
@@ -110,7 +138,7 @@ export default function HomePage() {
               <div key={item.num} className="intro-plan-item">
                 <div className="intro-num">{item.num}</div>
                 <h2 className="intro-plan-heading">{item.title.toUpperCase()}</h2>
-                <p className="intro-plan-body">{item.body}</p>
+                <div className="intro-plan-body">{item.body}</div>
               </div>
             ))}
           </div>

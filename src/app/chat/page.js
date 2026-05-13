@@ -8,6 +8,7 @@ import QuickSummary from '../components/QuickSummary';
 import ChatInput from '../components/ChatInput';
 import UploadedImages from '../components/UploadedImages';
 import ProfileModal from '../components/ProfileModal';
+import ClearAllConfirmModal from '../components/ClearAllConfirmModal';
 
 const INITIAL_RESPONSE = {
     intro: "Thanks for sharing. I can help you assess the possible causes and provide care advice.",
@@ -29,6 +30,8 @@ export default function ChatPage() {
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [historyMessages, setHistoryMessages] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [showClearAllModal, setShowClearAllModal] = useState(false);
+    const [clearingAll, setClearingAll] = useState(false);
     const chatBodyRef = useRef(null);
 
     // Conversation tracking
@@ -110,6 +113,29 @@ export default function ChatPage() {
         setLatestResponse(INITIAL_RESPONSE);
         setUploadedImages([]);
         setSymptoms(null);
+    }
+
+    // Clear all conversations
+    function handleClearAll() {
+        setShowClearAllModal(true);
+    }
+
+    async function confirmClearAll() {
+        setClearingAll(true);
+        try {
+            const res = await fetch('/api/conversations', { method: 'DELETE' });
+            if (res.ok) {
+                setConversations([]);
+                handleNewChat();
+                setShowClearAllModal(false);
+            } else {
+                console.error("Failed to clear conversations");
+            }
+        } catch (e) {
+            console.error("Error clearing conversations:", e);
+        } finally {
+            setClearingAll(false);
+        }
     }
 
     async function handleSend(text, images, rawFiles = []) {
@@ -206,6 +232,15 @@ export default function ChatPage() {
             {/* Profile completion modal — shown on first login */}
             {showProfileModal && (
                 <ProfileModal onComplete={() => update()} />
+            )}
+
+            {/* Clear All Confirm Modal */}
+            {showClearAllModal && (
+                <ClearAllConfirmModal
+                    onConfirm={confirmClearAll}
+                    onCancel={() => setShowClearAllModal(false)}
+                    loading={clearingAll}
+                />
             )}
 
             {/* History Modal */}
@@ -309,18 +344,18 @@ export default function ChatPage() {
                             </svg>
                             New chat
                         </button>
-                        <button className="btn-search" title="Search">
+                        {/* <button className="btn-search" title="Search">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
                                 strokeLinejoin="round">
                                 <circle cx="11" cy="11" r="8" />
                                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                             </svg>
-                        </button>
+                        </button> */}
                     </div>
 
                     <div className="conversations-label">
                         Your conversations
-                        <span className="clear-all">Clear All</span>
+                        <span className="clear-all" onClick={handleClearAll} style={{ cursor: 'pointer' }}>Clear All</span>
                     </div>
 
                     {/* Conversation list */}
@@ -431,7 +466,7 @@ export default function ChatPage() {
                     {/* Info cards */}
                     <div className="cards-row">
                         <KeyNotes title="Symptom notes" symptoms={symptoms} />
-                        <QuickSummary title="Quick summary" />
+                        {/* <QuickSummary title="Quick summary" /> */}
 
                         {/* Uploaded images component */}
                         <UploadedImages

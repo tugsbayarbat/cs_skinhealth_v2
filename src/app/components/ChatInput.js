@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import CollectionNoticeModal from './CollectionNoticeModal';
 
 export default function ChatInput({ onSend, disabled }) {
     const [text, setText] = useState('');
     const [previews, setPreviews] = useState([]); // array of data URLs
     const [rawFiles, setRawFiles] = useState([]); // array of original File objects
+    const [hasAcceptedNotice, setHasAcceptedNotice] = useState(false);
+    const [showNoticeModal, setShowNoticeModal] = useState(false);
     const fileInputRef = useRef(null);
 
     function handleFileChange(e) {
@@ -52,6 +55,19 @@ export default function ChatInput({ onSend, disabled }) {
 
     return (
         <div className="chat-input-area">
+            {showNoticeModal && (
+                <CollectionNoticeModal 
+                    onAccept={() => {
+                        setHasAcceptedNotice(true);
+                        setShowNoticeModal(false);
+                        // Using a small timeout helps ensure the modal closes before triggering file dialog, 
+                        // though it's typically fine.
+                        setTimeout(() => fileInputRef.current?.click(), 50);
+                    }}
+                    onCancel={() => setShowNoticeModal(false)}
+                />
+            )}
+
             {/* Image previews — shown above input row */}
             {previews.length > 0 && (
                 <div className="image-preview-strip">
@@ -75,27 +91,35 @@ export default function ChatInput({ onSend, disabled }) {
             )}
 
             <div className="input-row">
-                <label
+                <button
                     className={`attach-btn${previews.length > 0 ? ' attach-btn--active' : ''}`}
                     title="Attach images"
-                    style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+                    disabled={disabled}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        if (!hasAcceptedNotice) {
+                            setShowNoticeModal(true);
+                        } else {
+                            fileInputRef.current?.click();
+                        }
+                    }}
                 >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                        disabled={disabled}
-                    />
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                         strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                     </svg>
-                </label>
+                </button>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    disabled={disabled}
+                />
 
                 <input
                     className="chat-input"
