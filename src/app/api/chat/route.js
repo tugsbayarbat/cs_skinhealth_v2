@@ -17,7 +17,7 @@ export async function POST(request) {
     if (userId) {
         if (!conversationId) {
             // 1. Ask FastAPI to start a session and give us its session_id
-            const startRes = await fetch('http://localhost:8000/session/start', {
+            const startRes = await fetch('http://model.terrst.fun/session/start', {
                 method: 'POST',
                 headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
             });
@@ -43,7 +43,7 @@ export async function POST(request) {
         `;
 
         // ── 3. Proxy to FastAPI ─────────────────────────────────
-        const fastapiRes = await fetch('http://localhost:8000/chat/message', {
+        const fastapiRes = await fetch('http://model.terrst.fun/chat/message', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
