@@ -17,11 +17,14 @@ export async function POST(request) {
     if (userId) {
         if (!conversationId) {
             // 1. Ask FastAPI to start a session and give us its session_id
-            const startRes = await fetch('http://model.terrst.fun/session/start', {
+            const startRes = await fetch(`${process.env.FASTAPI_BASE_URL}/session/start`, {
                 method: 'POST',
                 headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
             });
-            if (!startRes.ok) throw new Error('Failed to start FastAPI session');
+            if (!startRes.ok) {
+                const errBody = await startRes.text();
+                throw new Error(`Failed to start FastAPI session: ${startRes.status} - ${errBody}`);
+            }
             const startData = await startRes.json();
             const fastapiSessionId = startData.session_id;
 
@@ -43,7 +46,7 @@ export async function POST(request) {
         `;
 
         // ── 3. Proxy to FastAPI ─────────────────────────────────
-        const fastapiRes = await fetch('http://model.terrst.fun/chat/message', {
+        const fastapiRes = await fetch(`${process.env.FASTAPI_BASE_URL}/chat/message`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

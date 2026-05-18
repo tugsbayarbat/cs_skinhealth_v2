@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
     try {
-        const fastapiRes = await fetch('http://model.terrst.fun/session/start', {
+        const fastapiRes = await fetch(`${process.env.FASTAPI_BASE_URL}/session/start`, {
             method: 'POST',
             headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
         });

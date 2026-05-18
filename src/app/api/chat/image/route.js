@@ -17,7 +17,7 @@ export async function POST(request) {
 
         // If no conversationId exists, create a new conversation
         if (!conversationId || conversationId === 'null') {
-            const startRes = await fetch('http://model.terrst.fun/session/start', {
+            const startRes = await fetch(`${process.env.FASTAPI_BASE_URL}/session/start`, {
                 method: 'POST',
                 headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
             });
@@ -43,7 +43,7 @@ export async function POST(request) {
         proxyFormData.append('file', file);
         proxyFormData.append('session_id', conversationId.toString());
 
-        const fastapiRes = await fetch('http://model.terrst.fun/chat/upload-image', {
+        const fastapiRes = await fetch(`${process.env.FASTAPI_BASE_URL}/chat/upload-image`, {
             method: 'POST',
             headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
             body: proxyFormData,

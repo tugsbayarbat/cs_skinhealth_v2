@@ -11,13 +11,9 @@ import ProfileModal from '../components/ProfileModal';
 import ClearAllConfirmModal from '../components/ClearAllConfirmModal';
 
 const INITIAL_RESPONSE = {
-    intro: "Thanks for sharing. I can help you assess the possible causes and provide care advice.",
-    preamble: "To begin, could you please tell me:",
-    points: [
-        "The approximate size of the red spot (e.g., smaller than a coin, larger than 1 cm)?",
-        "Whether it has any swelling, pus, or fluid?",
-        "Have you had fever, itching, or spreading redness around it?",
-    ],
+    intro: "Hello! I'm here to help with any skin health questions you may have. Feel free to describe your concern or upload an image, and I'll do my best to assist you.",
+    preamble: "",
+    points: [],
 };
 
 export default function ChatPage() {

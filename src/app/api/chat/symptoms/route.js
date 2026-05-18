@@ -9,7 +9,7 @@ export async function GET(request) {
     }
 
     try {
-        const fastapiRes = await fetch(`http://model.terrst.fun/session/${conversationId}/symptoms`, {
+        const fastapiRes = await fetch(`${process.env.FASTAPI_BASE_URL}/session/${conversationId}/symptoms`, {
             method: 'GET',
             headers: { 'X-Internal-Token': process.env.FASTAPI_INTERNAL_SECRET },
         });
