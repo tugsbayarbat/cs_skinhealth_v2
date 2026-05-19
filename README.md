@@ -2,6 +2,12 @@
 
 This repository contains the Next.js frontend and API orchestration layer for the **SkinHealth Dermatology Chatbot** project. It serves as the primary user interface for patients to register, log in via OTP, and interact with the multimodal machine learning backend.
 
+## Project Scope
+
+**Important:** This repository is strictly scoped to the **Frontend** of the SkinHealth application. It handles the web UI, client-side routing, user authentication flows, and API orchestration.
+
+It does **not** contain the core machine learning models, datasets, or the primary inference logic. The backend dependency for this project is managed in a separate repository (the FastAPI/LangGraph backend).
+
 ## Architecture & Technology Stack
 
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
