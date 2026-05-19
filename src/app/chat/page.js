@@ -328,7 +328,7 @@ export default function ChatPage() {
 
                 <div className="sidebar-inner">
                     <div className="sidebar-header">
-                        GROUP<span>7</span> CS P<span>2</span>
+                        GROUP<span>6</span> CS P<span>2</span>
                     </div>
 
                     <div className="sidebar-actions">
