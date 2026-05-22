@@ -31,12 +31,12 @@ export async function POST(request) {
     `;
 
     if (userRows.length === 0) {
-        // Register the user on the waitlist
-        await sql`
+        const inserted = await sql`
             INSERT INTO users (email, email_verified, is_approved)
-            VALUES (${email.toLowerCase()}, NOW(), FALSE)
+            VALUES (${email.toLowerCase()}, NOW(), TRUE)
+            RETURNING id, is_approved
         `;
-        return NextResponse.json({ error: 'Registered successfully.', reason: 'waitlist' }, { status: 403 });
+        userRows = inserted;
     }
 
     const user = userRows[0];
