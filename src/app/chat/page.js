@@ -368,6 +368,7 @@ export default function ChatPage() {
                                             setConversationId(conv.id);
                                             setLatestResponse({ intro: 'Loading conversation...', points: [] });
                                             setSymptoms(null);
+                                            setUploadedImages([]);
                                         }
                                     }}
                                     title={conv.title}
