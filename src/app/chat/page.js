@@ -142,6 +142,7 @@ export default function ChatPage() {
 
         try {
             let currentConvId = conversationId;
+            let imageUploadResponse = null;
 
             // 1. Upload images if any
             if (rawFiles && rawFiles.length > 0) {
@@ -163,31 +164,43 @@ export default function ChatPage() {
                         setConversationId(currentConvId);
                         await loadConversations();
                     }
+
+                    // Capture the AI's acknowledgment from image upload
+                    if (imgData.response) {
+                        imageUploadResponse = imgData.response;
+                    }
                 }
             }
 
-            // 2. Send the message (to advance conversation)
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, conversation_id: currentConvId }),
-            });
-            const data = await res.json();
+            // 2. Send message only if user typed text
+            if (text) {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, conversation_id: currentConvId }),
+                });
+                const data = await res.json();
 
-            if (data.response) {
-                setLatestResponse(data.response);
-            }
+                if (data.response) {
+                    setLatestResponse(data.response);
+                }
 
-            // If a new conversation was created here, store its id and refresh sidebar
-            const finalConvId = data.conversation_id || currentConvId;
-            if (data.conversation_id && !currentConvId) {
-                setConversationId(data.conversation_id);
-                await loadConversations();
-            }
+                const finalConvId = data.conversation_id || currentConvId;
+                if (data.conversation_id && !currentConvId) {
+                    setConversationId(data.conversation_id);
+                    await loadConversations();
+                }
 
-            // Refresh symptoms
-            if (finalConvId) {
-                await loadSymptoms(finalConvId);
+                if (finalConvId) {
+                    await loadSymptoms(finalConvId);
+                }
+            } else if (imageUploadResponse) {
+                // Image only (no text) — show the upload acknowledgment from FastAPI
+                setLatestResponse({ intro: imageUploadResponse, points: [] });
+
+                if (currentConvId) {
+                    await loadSymptoms(currentConvId);
+                }
             }
         } catch {
             setLatestResponse({ intro: 'Sorry, something went wrong. Please try again.', points: [] });
