@@ -18,7 +18,9 @@ const INITIAL_RESPONSE = {
 
 export default function ChatPage() {
     const { data: session, update } = useSession();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(() =>
+        typeof window !== 'undefined' ? window.innerWidth > 768 : true
+    );
     const [latestResponse, setLatestResponse] = useState(INITIAL_RESPONSE);
     const [uploadedImages, setUploadedImages] = useState([]);
     const [symptoms, setSymptoms] = useState(null);

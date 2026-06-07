@@ -570,6 +570,9 @@ body:has(.intro-page) {
   border-radius: 40px;
   border: 1px solid var(--border);
   cursor: pointer;
+  min-width: 0;
+  overflow: hidden;
+  flex: 1;
 }
 
 .user-avatar {
@@ -592,6 +595,10 @@ body:has(.intro-page) {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* MAIN CHAT AREA */
@@ -630,9 +637,12 @@ body:has(.intro-page) {
   border-radius: 20px 20px 20px 4px;
   padding: 28px 32px;
   max-width: 680px;
+  width: 100%;
   align-self: flex-start;
   animation: fadeUp 0.4s ease both;
   box-shadow: 0 8px 32px rgba(107, 53, 217, 0.18);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .assistant-bubble p {
@@ -865,6 +875,8 @@ body:has(.intro-page) {
   line-height: 1.55;
   animation: fadeUp 0.3s ease both;
   box-shadow: 0 4px 16px rgba(26, 26, 46, 0.12);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* TYPING INDICATOR */
@@ -1438,11 +1450,6 @@ body:has(.intro-page) {
     right: 14px;
   }
 
-  /* The actual CSS rule must match .sidebar-collapsed overrides */
-  .sidebar-collapsed .sidebar-toggle {
-    right: -44px;
-  }
-
   /* Collapsed sidebar-inner stays visible (transform handles hiding) */
   .sidebar-collapsed .sidebar-inner {
     opacity: 1;
@@ -1462,14 +1469,38 @@ body:has(.intro-page) {
   /* Adjust chat header padding */
   .chat-header {
     padding: 16px 20px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .chat-body {
     padding: 20px 16px;
   }
 
+  /* Tighter bubble padding on mobile */
+  .assistant-bubble {
+    padding: 20px 20px;
+  }
+
   .chat-input-area {
-    padding: 14px 16px 20px;
+    padding: 14px 16px max(20px, env(safe-area-inset-bottom));
+  }
+
+  /* iOS: prevent auto-zoom on input focus */
+  .chat-input {
+    font-size: 16px;
+  }
+}
+
+/* Profile modal: tighten padding on small phones */
+@media (max-width: 480px) {
+  .profile-modal-card {
+    padding: 28px 24px;
+    border-radius: 18px;
+  }
+
+  .profile-modal-title {
+    font-size: 22px;
   }
 }
 
@@ -1623,39 +1654,6 @@ body:has(.intro-page) {
 }
 
 .profile-submit-btn {
-  width: 100%;
-  padding: 14px;
-  background: var(--purple);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 4px;
-  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 6px 20px rgba(107, 53, 217, 0.3);
-}
-
-.profile-submit-btn:hover {
-  background: var(--purple-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(107, 53, 217, 0.4);
-}
-
-.profile-submit-btn:active {
-  transform: translateY(0);
-}
-
-.profile-submit-btn:disabled {
-  background: var(--text-light);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-profile-submit-btn {
   width: 100%;
   padding: 14px;
   background: var(--purple);
