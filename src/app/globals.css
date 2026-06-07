@@ -602,6 +602,11 @@ body:has(.intro-page) {
   min-width: 0;
 }
 
+/* Hamburger — hidden on desktop, shown on mobile */
+.hamburger-btn {
+  display: none;
+}
+
 /* MAIN CHAT AREA */
 .main {
   flex: 1;
@@ -1435,28 +1440,31 @@ body:has(.intro-page) {
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   }
 
-  /* Collapsed = slide off-screen to the left */
+  /* Collapsed = slide off-screen to the left, block ALL events so it
+     can never intercept taps on the main area */
   .sidebar-collapsed {
     transform: translateX(-100%);
     width: 280px;
     min-width: 280px;
     padding: 28px 20px;
+    pointer-events: none;
   }
 
-  /* Keep toggle inside view when sidebar is collapsed (shift right by 44px) */
-  .sidebar-collapsed .sidebar-toggle {
-    right: -44px;
-  }
-
-  /* On mobile open state, push toggle inward slightly to stay inside boundary */
+  /* Move close-toggle to top-right INSIDE the open sidebar on mobile */
   .sidebar .sidebar-toggle {
-    right: 14px;
+    right: 16px;
+    top: 16px;
   }
 
-  /* Collapsed sidebar-inner stays visible (transform handles hiding) */
+  /* Hide the toggle entirely when collapsed — hamburger in header takes over */
+  .sidebar-collapsed .sidebar-toggle {
+    display: none;
+  }
+
+  /* Collapsed sidebar-inner: keep opacity for smooth reopen animation */
   .sidebar-collapsed .sidebar-inner {
     opacity: 1;
-    pointer-events: auto;
+    pointer-events: none;
   }
 
   /* Backdrop overlay */
@@ -1469,10 +1477,35 @@ body:has(.intro-page) {
     animation: fadeIn 0.2s ease;
   }
 
+  /* Hamburger button — shown on mobile */
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-dark);
+    transition: background 0.15s;
+  }
+
+  .hamburger-btn:hover,
+  .hamburger-btn:active {
+    background: var(--border);
+  }
+
+  .hamburger-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
   /* Adjust chat header padding */
   .chat-header {
-    padding: 16px 20px;
-    flex-wrap: wrap;
+    padding: 14px 16px;
     gap: 8px;
   }
 
