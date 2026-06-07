@@ -115,6 +115,7 @@ export default function ChatPage() {
         setLatestResponse(INITIAL_RESPONSE);
         setUploadedImages([]);
         setSymptoms(null);
+        if (window.innerWidth <= 768) setSidebarOpen(false);
     }
 
     // Clear all conversations
