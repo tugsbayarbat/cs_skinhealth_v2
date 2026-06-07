@@ -3,7 +3,7 @@
 export default function CollectionNoticeModal({ onAccept, onCancel }) {
     return (
         <div className="profile-modal-overlay">
-            <div className="profile-modal-card" style={{ maxWidth: '500px' }}>
+            <div className="profile-modal-card">
                 <div className="profile-modal-header">
                     <div className="profile-modal-icon">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -42,13 +42,14 @@ export default function CollectionNoticeModal({ onAccept, onCancel }) {
                     <button
                         onClick={onCancel}
                         className="profile-submit-btn"
-                        style={{ background: 'var(--border)', color: 'var(--text-dark)', boxShadow: 'none' }}
+                        style={{ flex: 1, width: 'auto', background: 'var(--border)', color: 'var(--text-dark)', boxShadow: 'none' }}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={onAccept}
                         className="profile-submit-btn"
+                        style={{ flex: 1, width: 'auto' }}
                     >
                         I Understand & Agree
                     </button>
