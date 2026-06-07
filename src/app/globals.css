@@ -1419,6 +1419,12 @@ body:has(.intro-page) {
 /* ─────────────────────────────────────────────
    CHAT PAGE — MOBILE SIDEBAR
 ───────────────────────────────────────────── */
+
+/* Hidden on desktop; mobile media query overrides to display: block */
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 768px) {
 
   /* Sidebar becomes a fixed overlay panel */

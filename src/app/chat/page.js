@@ -18,9 +18,13 @@ const INITIAL_RESPONSE = {
 
 export default function ChatPage() {
     const { data: session, update } = useSession();
-    const [sidebarOpen, setSidebarOpen] = useState(() =>
-        typeof window !== 'undefined' ? window.innerWidth > 768 : true
-    );
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Open sidebar on desktop after mount. Starting with false is the safe SSR
+    // default — mobile stays closed, desktop opens via this effect.
+    useEffect(() => {
+        setSidebarOpen(window.innerWidth > 768);
+    }, []);
     const [latestResponse, setLatestResponse] = useState(INITIAL_RESPONSE);
     const [uploadedImages, setUploadedImages] = useState([]);
     const [symptoms, setSymptoms] = useState(null);
@@ -328,7 +332,7 @@ export default function ChatPage() {
             <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
                 <button
                     className="sidebar-toggle"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    onClick={() => setSidebarOpen(prev => !prev)}
                     title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
